@@ -1,0 +1,19 @@
+[package]
+name = "tmptxt"
+version = "0.1.0"
+edition = "2021"
+description = "A minimal terminal scratchpad with auto-save"
+license = "Apache-2.0"
+repository = "https://github.com/example/tmptxt"
+readme = "README.md"
+
+[[bin]]
+name = "tmptxt"
+path = "src/main.rs"
+
+[dependencies]
+crossterm = "0.28"
+ctrlc = "3.4"
+directories = "5"
+ratatui = "0.28"
+unicode-width = "0.2"
