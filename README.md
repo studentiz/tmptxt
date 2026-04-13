@@ -1,371 +1,402 @@
 <div align="center">
 
-# tmptxt
+# 📝 tmptxt
 
 **A tiny terminal scratchpad — auto-saves, one draft, zero fuss.**
+
+<br>
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![GitHub](https://img.shields.io/badge/GitHub-studentiz%2Ftmptxt-181717?logo=github)](https://github.com/studentiz/tmptxt)
 
+<br>
+
+*Type `tmptxt` in any terminal, jot something down, quit.*
+*Next time you type `tmptxt` — it's still there.*
+
 </div>
 
-> *Terminal scratchpad that auto-saves and resumes where you left off.*
+<br>
+
+## 💡 The idea
+
+You're in a terminal. You need to **park a piece of text** — an API key, a command, a quick reminder — for a few minutes or a few days. You don't want to open an editor, pick a filename, or choose a folder.
+
+**tmptxt** gives you a single scratchpad that is always one command away, saves itself, and stays out of your way.
+
+- 🔑 Stash an API key like `OPENAI_API_KEY=sk-...` — paste it in, come back any time
+- 🐳 Park a long `docker run` command you'll need again — no more clipboard accidents
+- 🐛 Jot debug notes ("port 3001 works, 3000 doesn't") — beats scrolling through terminal history
+- 🖥️ Remember SSH hosts, temp passwords, server IPs — one place, no file path to remember
+- 📌 Leave yourself a config reminder — zero context-switch, zero extra apps
+
+The common thread: **throwaway text you'd lose otherwise**, accessible from any directory by typing **one word**.
+
+<br>
+
+## ✨ What tmptxt does
+
+- **📂 One command, anywhere** — type `tmptxt` from any folder to open the scratchpad
+- **💾 Auto-saves everything** — saves in the background while you type, on exit (`Ctrl+X`), and even on `Ctrl+C`
+- **📄 One draft, always** — a single `default.txt` in your OS data directory; no filenames, no folders to manage
+- **📤 Export when needed** — `Ctrl+O` writes a copy to any path; the default draft stays untouched
+- **🧹 Clear with confirmation** — `Ctrl+L` wipes the scratchpad, but only after you confirm (y/n)
+- **🌍 Cross-platform** — macOS, Linux, Windows; full UTF-8 support (CJK friendly); adapts to terminal resize
+
+<br>
+
+## 🚀 Installation
+
+After these steps, you can type `tmptxt` in **any** terminal window — the same way you'd type `nano` or `git`.
+
+tmptxt is written in [Rust](https://www.rust-lang.org/). Your computer compiles it once during install. That requires two tools:
+
+| Tool | What it does | How you get it |
+| :--- | :--- | :--- |
+| 🔧 **Git** | Downloads the tmptxt source code | Probably already installed — run `git --version` to check |
+| 📦 **Cargo** | Compiles and installs tmptxt | Comes **free with Rust** — install Rust, get Cargo automatically |
+
+> 💬 **Never heard of Cargo?** No worries. Cargo is just the build tool that ships with the Rust programming language. You don't download it separately — the Rust installer handles everything. The steps below walk you through it.
+
+Pick **your operating system** and follow the steps in order. Every command is meant to be **copied and pasted as-is**.
+
+<br>
 
 ---
 
-## Table of contents
+### 🍎 macOS
 
-| | |
-| :--- | :--- |
-| [Why tmptxt](#why-tmptxt) | What it is (and is not) |
-| [Features](#features) | What you get out of the box |
-| [Installation](#installation) | macOS · Linux · Windows (full copy-paste flows) |
-| [Uninstall](#uninstall) | Remove the binary and optional data |
-| [Usage](#usage) | Day-to-day commands |
-| [Keybindings](#keybindings) | Keyboard reference |
-| [Data storage](#data-storage-location) | Where your draft lives |
-| [Philosophy](#design-philosophy) | Why it stays small |
-| [Non-goals](#non-goals) | What we deliberately skip |
-| [License](#license) | Apache License 2.0 |
-| [Publish to GitHub](#publish-to-github-for-maintainers) | One-time `gh` push |
+> Your default terminal app is **Terminal** (Applications → Utilities). The default shell is **zsh**.
 
----
+<br>
 
-## Why tmptxt
+**Step 1 — Install Rust and Cargo**
 
-tmptxt is a **low-friction scratch surface** in the terminal: paste snippets, jot reminders, and let it persist for you. It is **not** a full editor, IDE, notes vault, or task manager — just a single auto-saving draft, like digital scrap paper.
+Paste this into Terminal and press Enter:
 
----
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+```
 
-## Features
+> 💬 This downloads the official Rust installer from [rustup.rs](https://rustup.rs/) and runs it with default settings. The `-y` flag means "accept defaults automatically".
+>
+> ⚠️ If your terminal says `curl: command not found`, run `xcode-select --install` first. That installs Apple's developer tools (which include `curl` and `git`). Wait for it to finish, then come back to Step 1.
 
-| | |
-| :--- | :--- |
-| **Editing** | Multi-line buffer, UTF-8 (including CJK), bracketed paste, resize-aware layout |
-| **Persistence** | One default draft (`default.txt`); dirty flag + timed auto-save; save on exit (`Ctrl+X`) and best-effort on interrupt |
-| **Export** | **Save As** writes a copy elsewhere; the app always reopens the same default draft |
-| **Safety** | **Clear** asks for confirmation before wiping the scratchpad |
-| **UI** | Full-screen TUI: header, editor, shortcut bar — minimal and readable |
+Now tell the current terminal window where Cargo lives:
 
----
+```bash
+source "$HOME/.cargo/env"
+```
 
-## Installation
+> 💬 This loads Cargo into your current session. Future terminal windows will find it automatically.
 
-**Goal:** from **any** folder in a terminal, type `tmptxt` and press Enter (same idea as `nano`).
-
-Official source code: **[github.com/studentiz/tmptxt](https://github.com/studentiz/tmptxt)**.
-
-Pick **one** section below — **macOS**, **Linux**, or **Windows** — and run the commands in order.
-
----
-
-### All platforms — Rust toolchain (do this first)
-
-1. Open **[rustup.rs](https://rustup.rs/)** and install Rust for your operating system.
-2. When the installer finishes, **close every terminal window** and open a **new** one.
-3. Check that Cargo works:
+Check that it worked — you should see a version number:
 
 ```bash
 cargo --version
 ```
 
-You should see a version number. If not, restart the computer and try again.
+<br>
 
-You also need **Git** to clone the repository:
-
-| OS | If Git is missing |
-| :--- | :--- |
-| **macOS** | Install [Xcode Command Line Tools](https://developer.apple.com/download/all/) (`xcode-select --install`) or install Git from [git-scm.com](https://git-scm.com/download/mac). |
-| **Linux** | e.g. Debian/Ubuntu: `sudo apt update && sudo apt install -y git build-essential` · Fedora: `sudo dnf install -y git gcc` |
-| **Windows** | Install [Git for Windows](https://git-scm.com/download/win) and use **Git Bash** or **PowerShell** for the steps below. |
-
----
-
-### Installation on macOS
-
-Use **Terminal** (or iTerm2). The default shell is **zsh**.
-
-**1.** Clone the repo and enter it (copy the whole block):
+**Step 2 — Download tmptxt**
 
 ```bash
-cd ~
-git clone https://github.com/studentiz/tmptxt.git
-cd tmptxt
+git clone https://github.com/studentiz/tmptxt.git ~/tmptxt
 ```
 
-**2.** Install the `tmptxt` binary into Cargo’s bin folder (`~/.cargo/bin`):
+> 💬 This creates a folder called `tmptxt` inside your home directory (`~`), containing the source code.
+
+<br>
+
+**Step 3 — Build and install**
 
 ```bash
+cd ~/tmptxt
 cargo install --path .
 ```
 
-Wait until this finishes without errors.
+> 💬 `cargo install --path .` compiles the project and places the `tmptxt` program into `~/.cargo/bin/` — a folder your system searches when you type a command.
 
-**3.** **Close Terminal**, open a **new** window, then verify:
+<br>
+
+**Step 4 — Verify**
+
+**Close Terminal completely**, then open a **new** window. This ensures your PATH is up to date.
 
 ```bash
 tmptxt --version
-tmptxt
 ```
 
-You do **not** need to `cd` into the project for these commands.
+✅ You should see a version number like `tmptxt 0.1.0`.
 
-**4.** If `tmptxt` is **not found**, add Cargo’s bin directory to your PATH for zsh, then open a **new** terminal:
+<br>
+
+**Step 5 — If `tmptxt` is not found** *(skip this if Step 4 worked)*
+
+This means Cargo's folder (`~/.cargo/bin`) is not on your PATH yet. Fix it once:
 
 ```bash
 echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
-tmptxt --version
 ```
+
+> 💬 This adds `~/.cargo/bin` to your shell's search path permanently. You only need to do this once. After running it, open a **new** Terminal window and try `tmptxt --version` again.
+
+<br>
 
 ---
 
-### Installation on Linux
+### 🐧 Linux
 
-Use your usual terminal (**bash** is common). Commands below use `bash` for PATH fixes.
+> Works on Ubuntu, Debian, Fedora, Arch, WSL, and most other distributions. Commands below assume **bash**.
 
-**1.** Clone the repo and enter it:
+<br>
+
+**Step 1 — Install build dependencies**
+
+Compiling tmptxt needs a C compiler, `curl`, and `git`. Pick your distro:
+
+Ubuntu / Debian:
 
 ```bash
-cd ~
-git clone https://github.com/studentiz/tmptxt.git
-cd tmptxt
+sudo apt-get update
+sudo apt-get install -y curl build-essential git
 ```
 
-**2.** Install:
+Fedora:
 
 ```bash
+sudo dnf install -y curl gcc gcc-c++ git
+```
+
+Arch:
+
+```bash
+sudo pacman -S --needed curl base-devel git
+```
+
+> 💬 These packages give Rust the tools it needs to compile programs. If they're already installed, the command does nothing — safe to run either way.
+
+<br>
+
+**Step 2 — Install Rust and Cargo**
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+```
+
+Load Cargo into the current session:
+
+```bash
+source "$HOME/.cargo/env"
+```
+
+Check:
+
+```bash
+cargo --version
+```
+
+<br>
+
+**Step 3 — Download, build, install**
+
+```bash
+git clone https://github.com/studentiz/tmptxt.git ~/tmptxt
+cd ~/tmptxt
 cargo install --path .
 ```
 
-**3.** **Close the terminal**, open a **new** one, then:
+<br>
+
+**Step 4 — Verify**
+
+**Close the terminal**, open a **new** one, then:
 
 ```bash
 tmptxt --version
-tmptxt
 ```
 
-**4.** If `tmptxt` is **not found**, add `~/.cargo/bin` to PATH (bash), then open a **new** terminal:
+✅ You should see a version number.
+
+<br>
+
+**Step 5 — If `tmptxt` is not found** *(skip this if Step 4 worked)*
 
 ```bash
 echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
-tmptxt --version
 ```
 
-If you use **zsh** on Linux, replace `~/.bashrc` with `~/.zshrc` in the two lines above.
+> 💬 If you use **zsh** instead of bash, replace `~/.bashrc` with `~/.zshrc` in both lines above.
+
+Open a **new** terminal and try `tmptxt --version` again.
+
+<br>
 
 ---
 
-### Installation on Windows
+### 🪟 Windows
 
-Use **PowerShell** (recommended). Install Rust from [rustup.rs](https://rustup.rs/) for Windows, then install **Git** if you do not have `git` yet.
+> Use **PowerShell** (pre-installed on Windows 10 and 11). You also need **Git** — if `git --version` fails, install [Git for Windows](https://git-scm.com/download/win) first.
 
-**1.** Clone and enter the repo (default clone location: your user folder):
+<br>
+
+**Step 1 — Install Rust and Cargo**
+
+**Option A** — if `winget` works on your machine:
 
 ```powershell
-cd $env:USERPROFILE
-git clone https://github.com/studentiz/tmptxt.git
-cd tmptxt
+winget install Rustlang.Rustup --accept-package-agreements --accept-source-agreements
 ```
 
-**2.** Install:
+**Option B** — no `winget`: open **[rustup.rs](https://rustup.rs/)** in a browser, download the installer, run it, and accept all defaults. If it asks to install **Visual Studio C++ Build Tools**, say yes.
+
+> 💬 Rust needs a C/C++ compiler on Windows. The Visual Studio Build Tools provide that. This is a one-time setup — it won't affect your other programs.
+
+⚠️ **After Rust finishes installing, close PowerShell and open a new window.** This is required so PowerShell can find the newly installed `cargo` command.
+
+Check in the new window:
 
 ```powershell
+cargo --version
+```
+
+<br>
+
+**Step 2 — Download tmptxt**
+
+```powershell
+git clone https://github.com/studentiz/tmptxt.git $env:USERPROFILE\tmptxt
+```
+
+> 💬 This creates a `tmptxt` folder in your user directory (e.g. `C:\Users\YourName\tmptxt`).
+
+<br>
+
+**Step 3 — Build and install**
+
+```powershell
+cd $env:USERPROFILE\tmptxt
 cargo install --path .
 ```
 
-**3.** **Close PowerShell**, open a **new** window, then:
+<br>
+
+**Step 4 — Verify**
+
+**Close PowerShell**, open a **new** window, then:
 
 ```powershell
 tmptxt --version
-tmptxt
 ```
 
-**4.** If `tmptxt` is **not recognized**, add Cargo’s bin directory to your user PATH once, then **close and reopen** PowerShell:
+✅ You should see a version number.
+
+<br>
+
+**Step 5 — If `tmptxt` is not recognized** *(skip this if Step 4 worked)*
 
 ```powershell
 $cargoBin = Join-Path $env:USERPROFILE ".cargo\bin"
-$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if ($userPath -notlike "*$cargoBin*") {
-  [Environment]::SetEnvironmentVariable("Path", "$userPath;$cargoBin", "User")
+$currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
+if ($currentPath -notlike "*$cargoBin*") {
+  [Environment]::SetEnvironmentVariable("Path", "$currentPath;$cargoBin", "User")
 }
 ```
 
-Open a **new** PowerShell window and run `tmptxt --version` again.
+> 💬 This adds Cargo's bin directory to your user PATH permanently. You only need to do this once.
+
+Close PowerShell, open a new window, and try `tmptxt --version` again.
+
+<br>
 
 ---
 
-### Already cloned? (all platforms)
-
-If you already have the project folder (for example you downloaded a ZIP), open a terminal **inside** that folder (where `Cargo.toml` is), then:
+## 🎯 Usage
 
 ```bash
-cargo install --path .
+tmptxt            # open the scratchpad
+tmptxt --help     # show help
+tmptxt --version  # show version
 ```
 
-Then continue with the **verify** steps for your OS above (new terminal, `tmptxt --version`).
+tmptxt always opens the **same default draft**. It does not accept a filename argument — that's by design. One draft, always there, always one command away.
 
----
+<br>
 
-### Optional: copy the binary to `~/.local/bin` (macOS & Linux only)
+## ⌨️ Keybindings
 
-Use this only if you prefer not to use `~/.cargo/bin` on your PATH.
-
-```bash
-mkdir -p ~/.local/bin
-cd ~/tmptxt
-cargo build --release
-cp target/release/tmptxt ~/.local/bin/tmptxt
-chmod +x ~/.local/bin/tmptxt
-```
-
-**macOS (zsh):**
-
-```bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-```
-
-**Linux (bash):**
-
-```bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-Open a **new** terminal and run `tmptxt --version`.
-
----
-
-## Uninstall
-
-Uninstalling removes the **program** from Cargo’s bin directory (or your manual copy). Your **draft file is not removed** unless you run the optional data-deletion steps at the end.
-
-### macOS or Linux — installed with `cargo install --path .`
-
-In Terminal:
-
-```bash
-cargo uninstall tmptxt
-```
-
-Close all terminal windows.
-
-### Windows — installed with `cargo install --path .`
-
-In **PowerShell**:
-
-```powershell
-cargo uninstall tmptxt
-```
-
-Close all PowerShell windows.
-
-### macOS or Linux — optional `~/.local/bin` copy
-
-If you used the optional copy install:
-
-```bash
-rm -f ~/.local/bin/tmptxt
-```
-
-### Optional: delete saved notes (draft data)
-
-**Linux:**
-
-```bash
-rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/tmptxt"
-```
-
-**macOS:**
-
-```bash
-rm -rf "$HOME/Library/Application Support/tmptxt"
-```
-
-**Windows (PowerShell):**
-
-```powershell
-Remove-Item -Recurse -Force "$env:LOCALAPPDATA\tmptxt" -ErrorAction SilentlyContinue
-```
-
-### Future packaging
-
-Homebrew, Scoop, or Linux distro packages may add their own install/remove commands later.
-
----
-
-## Usage
-
-```bash
-tmptxt
-```
-
-```bash
-tmptxt --help
-tmptxt --version
-```
-
-tmptxt does **not** open arbitrary files by path; it always opens the **default draft**.
-
----
-
-## Keybindings
-
-| Binding | Action |
+| Key | Action |
 | :--- | :--- |
-| `Ctrl+X` | Save draft and exit |
-| `Ctrl+O` | Save As (path input; `Esc` cancels) |
-| `Ctrl+L` | Clear scratchpad (**y** / **n** / `Esc` confirm) |
-| Arrows, `Home`, `End` | Move cursor |
-| `PageUp` / `PageDown` | Scroll by about one screen |
+| `Ctrl+X` | 💾 Save and exit |
+| `Ctrl+O` | 📤 Save As — export a copy to a path you type (`Esc` cancels) |
+| `Ctrl+L` | 🧹 Clear the scratchpad (asks y/n first) |
+| `Arrow keys` | Move cursor |
+| `Home` / `End` | Jump to start / end of line |
+| `PageUp` / `PageDown` | Scroll by one screen |
 | `Enter` | New line |
-| `Backspace` / `Delete` | Delete / join lines at edges |
+| `Backspace` / `Delete` | Delete character / join lines |
 
----
+<br>
 
-## Data storage location
+## 📁 Data storage
 
-Draft data lives under the **OS user data directory**, never beside the binary:
+Your draft lives in the **OS user data directory** — never next to the installed program:
 
-| OS | Path |
+| OS | File path |
 | :--- | :--- |
-| **Linux** | `$XDG_DATA_HOME/tmptxt/tmptxt` or `~/.local/share/tmptxt/tmptxt` |
-| **macOS** | `~/Library/Application Support/tmptxt/tmptxt` |
-| **Windows** | `%LOCALAPPDATA%\tmptxt\tmptxt\` |
+| 🐧 Linux | `~/.local/share/tmptxt/tmptxt/default.txt` |
+| 🍎 macOS | `~/Library/Application Support/tmptxt/tmptxt/default.txt` |
+| 🪟 Windows | `%LOCALAPPDATA%\tmptxt\tmptxt\default.txt` |
 
-Default file: **`default.txt`**. **Save As** only exports a copy; the app keeps using the default draft.
+**Save As** (`Ctrl+O`) exports a copy to any path you choose; the app continues to use `default.txt`.
 
----
+<br>
 
-## Design philosophy
+## 🗑️ Uninstall
 
-- **Auto-save** over manual save rituals for scratch content
-- **One draft** to keep mental overhead low
-- **Small surface** over feature creep
-
----
-
-## Non-goals
-
-tmptxt is **not** aiming to replace a real editor. There is no multi-file UI, tabs, syntax highlighting, Markdown preview, search/replace, sync, accounts, or task features. Use a proper editor when you need those — keep tmptxt for quick throwaway text.
-
----
-
-## Publish to GitHub (for maintainers)
-
-The repository is intended to live at **[github.com/studentiz/tmptxt](https://github.com/studentiz/tmptxt)**. Creating it requires a one-time login with the [GitHub CLI](https://cli.github.com/).
-
-From the project root, after installing `gh`:
+Remove the program (all platforms):
 
 ```bash
-gh auth login
-./scripts/publish-to-github.sh
+cargo uninstall tmptxt
 ```
 
-Or run the same steps by hand:
+Optionally, delete the source code folder:
+
+```bash
+rm -rf ~/tmptxt
+```
+
+Optionally, delete your saved draft data:
+
+| OS | Command |
+| :--- | :--- |
+| 🐧 Linux | `rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/tmptxt"` |
+| 🍎 macOS | `rm -rf "$HOME/Library/Application Support/tmptxt"` |
+| 🪟 Windows | `Remove-Item -Recurse -Force "$env:LOCALAPPDATA\tmptxt"` |
+
+<br>
+
+## 🧭 Design philosophy
+
+- **💾 Auto-save** — no manual save, no "unsaved changes" prompts
+- **📄 One draft** — no filenames, no folders, no decisions
+- **🎯 Minimal** — does one thing well, then gets out of the way
+
+<br>
+
+## 🚫 Non-goals
+
+tmptxt is not trying to become a text editor. It will not grow into multi-file management, tabs, syntax highlighting, search/replace, plugins, cloud sync, or accounts. If you need those, use a dedicated editor — keep tmptxt for the text that doesn't deserve a file.
+
+<br>
+
+---
+
+<details>
+<summary>🔧 <strong>For maintainers: publish to GitHub</strong></summary>
 
 ```bash
 gh auth login
@@ -374,15 +405,17 @@ gh repo create tmptxt --public \
   --source=. --remote=origin --push
 ```
 
-If `origin` already exists and the empty repo is on GitHub:
+Or push to an existing remote:
 
 ```bash
-git remote add origin https://github.com/studentiz/tmptxt.git   # skip if already added
+git remote add origin https://github.com/studentiz/tmptxt.git
 git push -u origin main
 ```
 
----
+</details>
 
-## License
+<br>
 
-Licensed under the **Apache License, Version 2.0**. See [`LICENSE`](LICENSE) for the full text. A short attribution notice is in [`NOTICE`](NOTICE).
+## 📜 License
+
+[Apache License 2.0](LICENSE) — see [`NOTICE`](NOTICE) for attribution.
