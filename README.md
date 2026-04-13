@@ -6,6 +6,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
+[![GitHub](https://img.shields.io/badge/GitHub-studentiz%2Ftmptxt-181717?logo=github)](https://github.com/studentiz/tmptxt)
 
 </div>
 
@@ -27,6 +28,7 @@
 | [Philosophy](#design-philosophy) | Why it stays small |
 | [Non-goals](#non-goals) | What we deliberately skip |
 | [License](#license) | Apache License 2.0 |
+| [Publish to GitHub](#publish-to-github-for-maintainers) | One-time `gh` push |
 
 ---
 
@@ -86,11 +88,11 @@ cd ~/Desktop/tmptxt
 cd ~/Downloads/tmptxt
 ```
 
-**Git clone** (replace the URL):
+**Git clone:**
 
 ```bash
 cd ~
-git clone <repository-url> tmptxt
+git clone https://github.com/studentiz/tmptxt.git
 cd tmptxt
 ```
 
@@ -306,6 +308,35 @@ Default file: **`default.txt`**. **Save As** only exports a copy; the app keeps 
 ## Non-goals
 
 tmptxt is **not** aiming to replace a real editor. There is no multi-file UI, tabs, syntax highlighting, Markdown preview, search/replace, sync, accounts, or task features. Use a proper editor when you need those — keep tmptxt for quick throwaway text.
+
+---
+
+## Publish to GitHub (for maintainers)
+
+The repository is intended to live at **[github.com/studentiz/tmptxt](https://github.com/studentiz/tmptxt)**. Creating it requires a one-time login with the [GitHub CLI](https://cli.github.com/).
+
+From the project root, after installing `gh`:
+
+```bash
+gh auth login
+./scripts/publish-to-github.sh
+```
+
+Or run the same steps by hand:
+
+```bash
+gh auth login
+gh repo create tmptxt --public \
+  --description "Minimal auto-saving terminal scratchpad (Rust)" \
+  --source=. --remote=origin --push
+```
+
+If `origin` already exists and the empty repo is on GitHub:
+
+```bash
+git remote add origin https://github.com/studentiz/tmptxt.git   # skip if already added
+git push -u origin main
+```
 
 ---
 
