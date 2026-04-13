@@ -20,7 +20,7 @@
 | :--- | :--- |
 | [Why tmptxt](#why-tmptxt) | What it is (and is not) |
 | [Features](#features) | What you get out of the box |
-| [Installation](#installation) | Copy-paste friendly, macOS / Linux / Windows |
+| [Installation](#installation) | macOS · Linux · Windows (full copy-paste flows) |
 | [Uninstall](#uninstall) | Remove the binary and optional data |
 | [Usage](#usage) | Day-to-day commands |
 | [Keybindings](#keybindings) | Keyboard reference |
@@ -52,43 +52,41 @@ tmptxt is a **low-friction scratch surface** in the terminal: paste snippets, jo
 
 ## Installation
 
-**Goal:** open **any** terminal, type `tmptxt`, press Enter — same idea as `nano` once it is on your **PATH**.
+**Goal:** from **any** folder in a terminal, type `tmptxt` and press Enter (same idea as `nano`).
 
-Follow **either** the **macOS / Linux** path **or** the **Windows** path below.
+Official source code: **[github.com/studentiz/tmptxt](https://github.com/studentiz/tmptxt)**.
 
-### 0. One-time: install Rust (skip if `cargo` already works)
+Pick **one** section below — **macOS**, **Linux**, or **Windows** — and run the commands in order.
 
-1. Open [rustup.rs](https://rustup.rs/) and install Rust for your OS.
+---
+
+### All platforms — Rust toolchain (do this first)
+
+1. Open **[rustup.rs](https://rustup.rs/)** and install Rust for your operating system.
 2. When the installer finishes, **close every terminal window** and open a **new** one.
-3. Copy-paste:
+3. Check that Cargo works:
 
 ```bash
 cargo --version
 ```
 
-If you see a version number, continue. If not, restart the computer and try step 3 again.
+You should see a version number. If not, restart the computer and try again.
 
-### 1. Open the tmptxt project folder in a terminal
+You also need **Git** to clone the repository:
 
-The folder must contain **`Cargo.toml`**.
+| OS | If Git is missing |
+| :--- | :--- |
+| **macOS** | Install [Xcode Command Line Tools](https://developer.apple.com/download/all/) (`xcode-select --install`) or install Git from [git-scm.com](https://git-scm.com/download/mac). |
+| **Linux** | e.g. Debian/Ubuntu: `sudo apt update && sudo apt install -y git build-essential` · Fedora: `sudo dnf install -y git gcc` |
+| **Windows** | Install [Git for Windows](https://git-scm.com/download/win) and use **Git Bash** or **PowerShell** for the steps below. |
 
-**macOS / Linux** — edit the path, then paste:
+---
 
-```bash
-cd ~/path/to/tmptxt
-```
+### Installation on macOS
 
-Examples:
+Use **Terminal** (or iTerm2). The default shell is **zsh**.
 
-```bash
-cd ~/Desktop/tmptxt
-```
-
-```bash
-cd ~/Downloads/tmptxt
-```
-
-**Git clone:**
+**1.** Clone the repo and enter it (copy the whole block):
 
 ```bash
 cd ~
@@ -96,63 +94,96 @@ git clone https://github.com/studentiz/tmptxt.git
 cd tmptxt
 ```
 
-**Windows (PowerShell)** — edit the path:
-
-```powershell
-cd $env:USERPROFILE\Desktop\tmptxt
-```
-
-### 2a. Install on macOS or Linux
-
-Paste, wait until it finishes with no errors:
+**2.** Install the `tmptxt` binary into Cargo’s bin folder (`~/.cargo/bin`):
 
 ```bash
 cargo install --path .
 ```
 
-Then **close this terminal**, open a **new** one, and run:
+Wait until this finishes without errors.
+
+**3.** **Close Terminal**, open a **new** window, then verify:
 
 ```bash
 tmptxt --version
+tmptxt
 ```
 
-| Result | What to do |
-| :--- | :--- |
-| Version prints | Done — go to [§3](#3-check-that-it-works-like-nano). |
-| `command not found` | Paste **one** block below, open a **new** terminal, run `tmptxt --version` again. |
+You do **not** need to `cd` into the project for these commands.
 
-**macOS (zsh — default; try this first):**
+**4.** If `tmptxt` is **not found**, add Cargo’s bin directory to your PATH for zsh, then open a **new** terminal:
 
 ```bash
 echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
+tmptxt --version
 ```
 
-**Linux (bash):**
+---
+
+### Installation on Linux
+
+Use your usual terminal (**bash** is common). Commands below use `bash` for PATH fixes.
+
+**1.** Clone the repo and enter it:
+
+```bash
+cd ~
+git clone https://github.com/studentiz/tmptxt.git
+cd tmptxt
+```
+
+**2.** Install:
+
+```bash
+cargo install --path .
+```
+
+**3.** **Close the terminal**, open a **new** one, then:
+
+```bash
+tmptxt --version
+tmptxt
+```
+
+**4.** If `tmptxt` is **not found**, add `~/.cargo/bin` to PATH (bash), then open a **new** terminal:
 
 ```bash
 echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
+tmptxt --version
 ```
 
-### 2b. Install on Windows
+If you use **zsh** on Linux, replace `~/.bashrc` with `~/.zshrc` in the two lines above.
 
-In **PowerShell**, from the tmptxt folder ([§1](#1-open-the-tmptxt-project-folder-in-a-terminal)):
+---
+
+### Installation on Windows
+
+Use **PowerShell** (recommended). Install Rust from [rustup.rs](https://rustup.rs/) for Windows, then install **Git** if you do not have `git` yet.
+
+**1.** Clone and enter the repo (default clone location: your user folder):
+
+```powershell
+cd $env:USERPROFILE
+git clone https://github.com/studentiz/tmptxt.git
+cd tmptxt
+```
+
+**2.** Install:
 
 ```powershell
 cargo install --path .
 ```
 
-**Close PowerShell**, open a **new** window, then:
+**3.** **Close PowerShell**, open a **new** window, then:
 
 ```powershell
 tmptxt --version
+tmptxt
 ```
 
-| Result | What to do |
-| :--- | :--- |
-| Version prints | Go to [§3](#3-check-that-it-works-like-nano). |
-| Command not found | Paste **once**, press Enter, **close and reopen** PowerShell, then `tmptxt --version` again. |
+**4.** If `tmptxt` is **not recognized**, add Cargo’s bin directory to your user PATH once, then **close and reopen** PowerShell:
 
 ```powershell
 $cargoBin = Join-Path $env:USERPROFILE ".cargo\bin"
@@ -162,43 +193,47 @@ if ($userPath -notlike "*$cargoBin*") {
 }
 ```
 
-### 3. Check that it works (like nano)
+Open a **new** PowerShell window and run `tmptxt --version` again.
 
-Use a **new** terminal. You should **not** need `cd` into the project.
+---
 
-**macOS / Linux:**
+### Already cloned? (all platforms)
+
+If you already have the project folder (for example you downloaded a ZIP), open a terminal **inside** that folder (where `Cargo.toml` is), then:
 
 ```bash
-tmptxt --version
-tmptxt
+cargo install --path .
 ```
 
-**Windows:**
+Then continue with the **verify** steps for your OS above (new terminal, `tmptxt --version`).
 
-```powershell
-tmptxt --version
-tmptxt
-```
+---
 
-### 4. Optional fallback (macOS / Linux only)
+### Optional: copy the binary to `~/.local/bin` (macOS & Linux only)
 
-If `cargo install --path .` failed or you prefer a manual copy:
+Use this only if you prefer not to use `~/.cargo/bin` on your PATH.
 
 ```bash
 mkdir -p ~/.local/bin
+cd ~/tmptxt
 cargo build --release
 cp target/release/tmptxt ~/.local/bin/tmptxt
 chmod +x ~/.local/bin/tmptxt
 ```
 
-**zsh:**
+**macOS (zsh):**
 
 ```bash
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-**bash:** use `~/.bashrc` instead of `~/.zshrc` in both lines.
+**Linux (bash):**
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
 
 Open a **new** terminal and run `tmptxt --version`.
 
@@ -206,43 +241,51 @@ Open a **new** terminal and run `tmptxt --version`.
 
 ## Uninstall
 
-### Installed with `cargo install --path .`
+Uninstalling removes the **program** from Cargo’s bin directory (or your manual copy). Your **draft file is not removed** unless you run the optional data-deletion steps at the end.
 
-**macOS, Linux, or Windows** (Terminal or PowerShell):
+### macOS or Linux — installed with `cargo install --path .`
+
+In Terminal:
 
 ```bash
 cargo uninstall tmptxt
 ```
 
-Close all terminals. This removes the binary from Cargo’s install folder; it **does not** delete your draft.
+Close all terminal windows.
 
-### Optional `~/.local/bin` copy (macOS / Linux)
+### Windows — installed with `cargo install --path .`
+
+In **PowerShell**:
+
+```powershell
+cargo uninstall tmptxt
+```
+
+Close all PowerShell windows.
+
+### macOS or Linux — optional `~/.local/bin` copy
+
+If you used the optional copy install:
 
 ```bash
 rm -f ~/.local/bin/tmptxt
 ```
 
-### Delete saved notes (optional)
+### Optional: delete saved notes (draft data)
 
-| OS | Command |
-| :--- | :--- |
-| **Linux** | `rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/tmptxt"` |
-| **macOS** | `rm -rf "$HOME/Library/Application Support/tmptxt"` |
-| **Windows** | `Remove-Item -Recurse -Force "$env:LOCALAPPDATA\tmptxt" -ErrorAction SilentlyContinue` |
-
-**Linux** (copy-paste):
+**Linux:**
 
 ```bash
 rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/tmptxt"
 ```
 
-**macOS** (copy-paste):
+**macOS:**
 
 ```bash
 rm -rf "$HOME/Library/Application Support/tmptxt"
 ```
 
-**Windows (PowerShell)** (copy-paste):
+**Windows (PowerShell):**
 
 ```powershell
 Remove-Item -Recurse -Force "$env:LOCALAPPDATA\tmptxt" -ErrorAction SilentlyContinue
@@ -250,7 +293,7 @@ Remove-Item -Recurse -Force "$env:LOCALAPPDATA\tmptxt" -ErrorAction SilentlyCont
 
 ### Future packaging
 
-Homebrew, Scoop, or distro packages may add their own flows; the steps above work without them.
+Homebrew, Scoop, or Linux distro packages may add their own install/remove commands later.
 
 ---
 
