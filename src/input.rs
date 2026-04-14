@@ -66,7 +66,7 @@ pub fn handle_key(app: &mut App, key: KeyEvent, storage: &Storage) -> Result<(),
                             app.toast = Some("Cleared".to_string());
                         }
                         Err(_) => {
-                            app.toast = Some("Cleared (save failed — see status)".to_string());
+                            app.toast = Some("Cleared (save failed - see status)".to_string());
                         }
                     }
                     app.mode = Mode::Editing;
@@ -89,14 +89,15 @@ pub fn handle_key(app: &mut App, key: KeyEvent, storage: &Storage) -> Result<(),
 }
 
 fn handle_editing(app: &mut App, key: KeyEvent, storage: &Storage) -> Result<(), String> {
+    if key.code == KeyCode::Esc {
+        app.flush_draft(storage, true)?;
+        app.should_quit = true;
+        return Ok(());
+    }
+
     if key.modifiers.contains(KeyModifiers::CONTROL) {
         match key.code {
-            KeyCode::Char('x') | KeyCode::Char('X') => {
-                app.flush_draft(storage, true)?;
-                app.should_quit = true;
-                return Ok(());
-            }
-            KeyCode::Char('o') | KeyCode::Char('O') => {
+            KeyCode::Char('s') | KeyCode::Char('S') => {
                 app.mode = Mode::SaveAs {
                     input: String::new(),
                 };

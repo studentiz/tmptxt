@@ -38,9 +38,9 @@ The common thread: **throwaway text you'd lose otherwise**, accessible from any 
 ## ✨ What tmptxt does
 
 - **📂 One command, anywhere** — type `tmptxt` from any folder to open the scratchpad
-- **💾 Auto-saves everything** — saves in the background while you type, on exit (`Ctrl+X`), and even on `Ctrl+C`
+- **💾 Auto-saves everything** — saves in the background while you type, on exit (`Esc`), and even on `Ctrl+C`
 - **📄 One draft, always** — a single `default.txt` in your OS data directory; no filenames, no folders to manage
-- **📤 Export when needed** — `Ctrl+O` writes a copy to any path; the default draft stays untouched
+- **📤 Export when needed** — `Ctrl+S` writes a copy to any path; the default draft stays untouched
 - **🧹 Clear with confirmation** — `Ctrl+L` wipes the scratchpad, but only after you confirm (y/n)
 - **🌍 Cross-platform** — macOS, Linux, Windows; full UTF-8 support (CJK friendly); adapts to terminal resize
 
@@ -330,8 +330,8 @@ tmptxt always opens the **same default draft**. It does not accept a filename ar
 
 | Key | Action |
 | :--- | :--- |
-| `Ctrl+X` | 💾 Save and exit |
-| `Ctrl+O` | 📤 Save As — export a copy to a path you type (`Esc` cancels) |
+| `Esc` | 💾 Save and exit |
+| `Ctrl+S` | 📤 Save As — export a copy to a path you type (`Esc` cancels) |
 | `Ctrl+L` | 🧹 Clear the scratchpad (asks y/n first) |
 | `Arrow keys` | Move cursor |
 | `Home` / `End` | Jump to start / end of line |
@@ -351,7 +351,7 @@ Your draft lives in the **OS user data directory** — never next to the install
 | 🍎 macOS | `~/Library/Application Support/tmptxt/tmptxt/default.txt` |
 | 🪟 Windows | `%LOCALAPPDATA%\tmptxt\tmptxt\default.txt` |
 
-**Save As** (`Ctrl+O`) exports a copy to any path you choose; the app continues to use `default.txt`.
+**Save As** (`Ctrl+S`) exports a copy to any path you choose; the app continues to use `default.txt`.
 
 <br>
 

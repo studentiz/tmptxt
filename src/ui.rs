@@ -77,7 +77,7 @@ fn render_header(frame: &mut Frame, area: Rect, app: &App) {
     let toast = app
         .toast
         .as_ref()
-        .map(|t| format!(" · {t}"))
+        .map(|t| format!(" | {t}"))
         .unwrap_or_default();
 
     let line1 = Line::from(vec![
@@ -88,12 +88,12 @@ fn render_header(frame: &mut Frame, area: Rect, app: &App) {
                 .bg(Color::Cyan)
                 .add_modifier(Modifier::BOLD),
         ),
-        Span::raw(" — Temporary terminal scratchpad"),
+        Span::raw(" - Temporary terminal scratchpad"),
     ]);
 
     let line2 = Line::from(vec![
         Span::styled("Auto-save enabled", Style::default().fg(Color::DarkGray)),
-        Span::raw(" · "),
+        Span::raw(" | "),
         Span::styled(status_text, status_style),
         Span::styled(toast, Style::default().fg(Color::Cyan)),
     ]);
@@ -104,7 +104,7 @@ fn render_header(frame: &mut Frame, area: Rect, app: &App) {
     ]);
 
     let line4 = Line::from(vec![Span::styled(
-        "Not a full editor — a single auto-saving scratchpad.",
+        "Not a full editor - a single auto-saving scratchpad.",
         Style::default().fg(Color::DarkGray),
     )]);
 
@@ -119,9 +119,9 @@ fn render_header(frame: &mut Frame, area: Rect, app: &App) {
 
 fn render_footer(frame: &mut Frame, area: Rect, _app: &App) {
     let help = Line::from(vec![
-        Span::styled("Ctrl+X", Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled("Esc", Style::default().add_modifier(Modifier::BOLD)),
         Span::raw(" Exit  "),
-        Span::styled("Ctrl+O", Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled("Ctrl+S", Style::default().add_modifier(Modifier::BOLD)),
         Span::raw(" Save As  "),
         Span::styled("Ctrl+L", Style::default().add_modifier(Modifier::BOLD)),
         Span::raw(" Clear (confirm)  "),
@@ -129,7 +129,7 @@ fn render_footer(frame: &mut Frame, area: Rect, _app: &App) {
     ]);
 
     let explain = Line::from(vec![Span::styled(
-        "How to: exit saves automatically; Save As exports a copy; Clear wipes the scratchpad after confirmation.",
+        "How to: Esc exits and saves automatically; Save As exports a copy; Clear wipes the scratchpad after confirmation.",
         Style::default().fg(Color::DarkGray),
     )]);
 
@@ -231,12 +231,12 @@ fn shrink_path(path: &std::path::Path, max_chars: usize) -> String {
     if s.chars().count() <= max_chars {
         return s;
     }
-    if max_chars <= 3 {
-        return "…".to_string();
+    if max_chars < 3 {
+        return ".".repeat(max_chars);
     }
-    let keep = max_chars - 1;
-    let skip = s.chars().count().saturating_sub(keep);
-    format!("…{}", s.chars().skip(skip).collect::<String>())
+    let suffix_len = max_chars - 3;
+    let skip = s.chars().count().saturating_sub(suffix_len);
+    format!("...{}", s.chars().skip(skip).collect::<String>())
 }
 
 fn render_save_as_overlay(frame: &mut Frame, main: Rect, input: &str) {
@@ -252,7 +252,7 @@ fn render_save_as_overlay(frame: &mut Frame, main: Rect, input: &str) {
 
     let text = vec![
         Line::from(Span::styled(
-            "Save As — export a copy (default draft is unchanged)",
+            "Save As - export a copy (default draft is unchanged)",
             Style::default().add_modifier(Modifier::BOLD),
         )),
         Line::from(Span::raw("Type a path, Enter to save, Esc to cancel.")),
