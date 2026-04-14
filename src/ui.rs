@@ -170,8 +170,7 @@ fn render_editor(frame: &mut Frame, inner: Rect, app: &App) {
             String::new()
         };
 
-        let padded = pad_visual_width(&content, w);
-        let line = Line::from(vec![Span::raw(padded)]);
+        let line = Line::from(vec![Span::raw(content)]);
         let p = Paragraph::new(line).alignment(Alignment::Left);
         frame.render_widget(p, row_area);
     }
@@ -209,21 +208,6 @@ fn vrow_to_line_seg(editor: &Editor, vrow: usize, width: u16) -> (usize, usize) 
         remaining -= count;
     }
     (editor.line_count(), 0)
-}
-
-/// Pad with ASCII spaces so the row occupies `target_width` terminal columns (for wide chars).
-fn pad_visual_width(s: &str, target_width: u16) -> String {
-    let mut out = String::from(s);
-    let mut vis: u16 = s
-        .chars()
-        .map(|c| unicode_width::UnicodeWidthChar::width(c).unwrap_or(0) as u16)
-        .sum();
-    let tw = target_width.max(1);
-    while vis < tw {
-        out.push(' ');
-        vis = vis.saturating_add(1);
-    }
-    out
 }
 
 fn shrink_path(path: &std::path::Path, max_chars: usize) -> String {
