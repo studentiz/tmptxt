@@ -214,6 +214,52 @@ impl Editor {
             .sum()
     }
 
+    /// Absolute visual row (from top of document) where the cursor currently sits.
+    pub fn cursor_visual_row(&self, width: u16) -> usize {
+        let mut vrow = 0;
+        for i in 0..self.cursor_line {
+            vrow += visual_line_count(&self.lines[i], width);
+        }
+        let segs = wrap_line(&self.lines[self.cursor_line], width);
+        vrow + cursor_segment_idx(&segs, self.cursor_col)
+    }
+}
+
+/// Splits a logical line into visual-row segments for soft wrapping.
+/// Each element is `(char_start, char_end)` — a half-open range of `char` indices.
+pub fn wrap_line(line: &str, width: u16) -> Vec<(usize, usize)> {
+    let w = width.max(1) as usize;
+    if line.is_empty() {
+        return vec![(0, 0)];
+    }
+    let mut segments = Vec::new();
+    let mut seg_start = 0usize;
+    let mut seg_width = 0usize;
+    for (char_idx, c) in line.chars().enumerate() {
+        let cw = UnicodeWidthChar::width(c).unwrap_or(0);
+        if seg_width + cw > w && seg_width > 0 {
+            segments.push((seg_start, char_idx));
+            seg_start = char_idx;
+            seg_width = 0;
+        }
+        seg_width += cw;
+    }
+    segments.push((seg_start, line.chars().count()));
+    segments
+}
+
+pub fn visual_line_count(line: &str, width: u16) -> usize {
+    wrap_line(line, width).len()
+}
+
+/// Returns which segment index `cursor_col` falls into.
+pub fn cursor_segment_idx(segs: &[(usize, usize)], cursor_col: usize) -> usize {
+    for (i, &(start, end)) in segs.iter().enumerate() {
+        if cursor_col >= start && cursor_col < end {
+            return i;
+        }
+    }
+    segs.len().saturating_sub(1)
 }
 
 fn char_len(s: &str) -> usize {

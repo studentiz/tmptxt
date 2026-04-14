@@ -9,7 +9,7 @@ use ratatui::{
 };
 
 use crate::app::{App, Mode, SaveState};
-use crate::editor::Editor;
+use crate::editor::{Editor, wrap_line, visual_line_count, cursor_segment_idx};
 
 pub fn render(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
@@ -31,7 +31,7 @@ pub fn render(frame: &mut Frame, app: &mut App) {
     let main_block = Block::default().borders(Borders::NONE);
     let inner_main = main_block.inner(chunks[1]);
     app.last_main_viewport_h = inner_main.height;
-    app.ensure_cursor_visible(inner_main.height);
+    app.ensure_cursor_visible(inner_main.height, inner_main.width);
 
     render_header(frame, chunks[0], app);
     render_editor(frame, inner_main, app);
@@ -144,88 +144,71 @@ fn render_footer(frame: &mut Frame, area: Rect, _app: &App) {
 
 fn render_editor(frame: &mut Frame, inner: Rect, app: &App) {
     let w = inner.width.max(1);
-    let h = inner.height.max(1);
+    let h = inner.height as usize;
+    let (mut cur_line, mut cur_seg) = vrow_to_line_seg(&app.editor, app.scroll_row, w);
 
     for row in 0..h {
-        let line_idx = app.scroll_row + row as usize;
-        let y = inner.y + row;
-        let line_text = if line_idx < app.editor.line_count() {
-            app.editor.line(line_idx)
+        let y = inner.y + row as u16;
+        let row_area = Rect::new(inner.x, y, w, 1);
+
+        let content = if cur_line < app.editor.line_count() {
+            let line_text = app.editor.line(cur_line);
+            let segs = wrap_line(line_text, w);
+            let s = if cur_seg < segs.len() {
+                let (start, end) = segs[cur_seg];
+                line_text.chars().skip(start).take(end - start).collect::<String>()
+            } else {
+                String::new()
+            };
+            cur_seg += 1;
+            if cur_seg >= segs.len() {
+                cur_line += 1;
+                cur_seg = 0;
+            }
+            s
         } else {
-            ""
+            String::new()
         };
 
-        let is_cursor_line = line_idx == app.editor.cursor_line;
-        let cursor_col = if is_cursor_line {
-            app.editor.cursor_col
-        } else {
-            0
-        };
-
-        let (slice, _) = slice_line_for_display(line_text, cursor_col, w, is_cursor_line);
-        let padded = pad_visual_width(&slice, w);
+        let padded = pad_visual_width(&content, w);
         let line = Line::from(vec![Span::raw(padded)]);
         let p = Paragraph::new(line).alignment(Alignment::Left);
-        let row_area = Rect::new(inner.x, y, w, 1);
         frame.render_widget(p, row_area);
     }
 }
 
 fn cursor_xy(inner: Rect, app: &App) -> Option<(u16, u16)> {
-    let row = app.editor.cursor_line.saturating_sub(app.scroll_row);
-    if row >= inner.height as usize {
+    let w = inner.width.max(1);
+    let cursor_vrow = app.editor.cursor_visual_row(w);
+    if cursor_vrow < app.scroll_row {
         return None;
     }
-    let y = inner.y + row as u16;
+    let screen_row = cursor_vrow - app.scroll_row;
+    if screen_row >= inner.height as usize {
+        return None;
+    }
+    let y = inner.y + screen_row as u16;
     let line_text = app.editor.line(app.editor.cursor_line);
-    let w = inner.width.max(1);
-    let (_slice, cursor_vx) = slice_line_for_display(line_text, app.editor.cursor_col, w, true);
+    let segs = wrap_line(line_text, w);
+    let seg_idx = cursor_segment_idx(&segs, app.editor.cursor_col);
+    let seg_start = segs[seg_idx].0;
+    let cursor_vx = Editor::visual_width_before(line_text, app.editor.cursor_col)
+        .saturating_sub(Editor::visual_width_before(line_text, seg_start));
     let x = inner.x + cursor_vx.min(w.saturating_sub(1));
     Some((x, y))
 }
 
-/// Horizontal slice for one terminal row. When `track_cursor` is true, scrolls so the cursor stays visible.
-fn slice_line_for_display(
-    line: &str,
-    cursor_col: usize,
-    width: u16,
-    track_cursor: bool,
-) -> (String, u16) {
-    let w = width.max(1) as usize;
-    let char_count = line.chars().count();
-
-    let mut start = 0usize;
-    if track_cursor && cursor_col <= char_count {
-        let v_cur = Editor::visual_width_before(line, cursor_col) as usize;
-        while start < char_count {
-            let v_start = Editor::visual_width_before(line, start) as usize;
-            if v_cur.saturating_sub(v_start) < w {
-                break;
-            }
-            start += 1;
+/// Maps a visual-row offset to the corresponding (logical_line, segment_index).
+fn vrow_to_line_seg(editor: &Editor, vrow: usize, width: u16) -> (usize, usize) {
+    let mut remaining = vrow;
+    for i in 0..editor.line_count() {
+        let count = visual_line_count(editor.line(i), width);
+        if remaining < count {
+            return (i, remaining);
         }
+        remaining -= count;
     }
-
-    let mut out = String::new();
-    let mut used = 0usize;
-    for c in line.chars().skip(start) {
-        let cw = unicode_width::UnicodeWidthChar::width(c).unwrap_or(0);
-        if used + cw > w {
-            break;
-        }
-        out.push(c);
-        used += cw;
-    }
-
-    let cursor_vx = if track_cursor && cursor_col <= char_count {
-        let v_cur = Editor::visual_width_before(line, cursor_col) as usize;
-        let v_start = Editor::visual_width_before(line, start) as usize;
-        (v_cur.saturating_sub(v_start)).min(w.saturating_sub(1)) as u16
-    } else {
-        0
-    };
-
-    (out, cursor_vx)
+    (editor.line_count(), 0)
 }
 
 /// Pad with ASCII spaces so the row occupies `target_width` terminal columns (for wide chars).

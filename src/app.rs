@@ -115,12 +115,14 @@ impl App {
         }
     }
 
-    pub fn ensure_cursor_visible(&mut self, viewport_h: u16) {
+    /// Adjusts `scroll_row` (visual-row offset) so the cursor stays on screen.
+    pub fn ensure_cursor_visible(&mut self, viewport_h: u16, viewport_w: u16) {
+        let cursor_vrow = self.editor.cursor_visual_row(viewport_w);
         let v = viewport_h as usize;
-        if self.editor.cursor_line < self.scroll_row {
-            self.scroll_row = self.editor.cursor_line;
-        } else if self.editor.cursor_line >= self.scroll_row + v {
-            self.scroll_row = self.editor.cursor_line.saturating_sub(v.saturating_sub(1));
+        if cursor_vrow < self.scroll_row {
+            self.scroll_row = cursor_vrow;
+        } else if cursor_vrow >= self.scroll_row + v {
+            self.scroll_row = cursor_vrow.saturating_sub(v.saturating_sub(1));
         }
     }
 }
