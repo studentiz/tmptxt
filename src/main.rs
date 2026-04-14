@@ -118,6 +118,11 @@ fn run_app(
             .draw(|f| ui::render(f, &mut app))
             .map_err(|e| format!("draw failed: {e}"))?;
 
+        if app.mode.is_editing() {
+            ui::raw_render_editor(terminal.backend_mut(), &app)
+                .map_err(|e| format!("raw render failed: {e}"))?;
+        }
+
         if event::poll(poll_timeout).map_err(|e| format!("poll failed: {e}"))? {
             match event::read().map_err(|e| format!("read event failed: {e}"))? {
                 event::Event::Key(key) => {

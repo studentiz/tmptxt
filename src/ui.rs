@@ -1,5 +1,8 @@
 //! Layout + rendering (ratatui). Keeps drawing concerns out of `app` logic.
 
+use std::io::Write;
+
+use crossterm::{cursor, queue, style, terminal as cterm};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -33,8 +36,11 @@ pub fn render(frame: &mut Frame, app: &mut App) {
     app.last_main_viewport_h = inner_main.height;
     app.ensure_cursor_visible(inner_main.height, inner_main.width);
 
+    app.editor_area = (inner_main.x, inner_main.y, inner_main.width, inner_main.height);
+
     render_header(frame, chunks[0], app);
-    render_editor(frame, inner_main, app);
+    // Editor content is rendered after terminal.draw() via raw_render_editor()
+    // so the terminal sees natural auto-wrapping instead of cell-positioned text.
     render_footer(frame, chunks[2], app);
 
     match &app.mode {
@@ -142,38 +148,67 @@ fn render_footer(frame: &mut Frame, area: Rect, _app: &App) {
     frame.render_widget(p, area);
 }
 
-fn render_editor(frame: &mut Frame, inner: Rect, app: &App) {
-    let w = inner.width.max(1);
-    let h = inner.height as usize;
-    let (mut cur_line, mut cur_seg) = vrow_to_line_seg(&app.editor, app.scroll_row, w);
+/// Writes editor text directly to the terminal via crossterm, bypassing ratatui's
+/// cell-based rendering.  The terminal's own auto-wrap (DECAWM) marks continuation
+/// rows as soft line breaks, so mouse-selection / copy never inserts spurious newlines
+/// at wrap points.
+pub fn raw_render_editor<W: Write>(out: &mut W, app: &App) -> std::io::Result<()> {
+    let (x, y, w, h) = app.editor_area;
+    if w == 0 || h == 0 {
+        return Ok(());
+    }
+
+    queue!(out, cursor::SavePosition)?;
 
     for row in 0..h {
-        let y = inner.y + row as u16;
-        let row_area = Rect::new(inner.x, y, w, 1);
+        queue!(
+            out,
+            cursor::MoveTo(x, y + row),
+            cterm::Clear(cterm::ClearType::UntilNewLine)
+        )?;
+    }
 
-        let content = if cur_line < app.editor.line_count() {
-            let line_text = app.editor.line(cur_line);
-            let segs = wrap_line(line_text, w);
-            let s = if cur_seg < segs.len() {
-                let (start, end) = segs[cur_seg];
-                line_text.chars().skip(start).take(end - start).collect::<String>()
-            } else {
-                String::new()
-            };
-            cur_seg += 1;
-            if cur_seg >= segs.len() {
-                cur_line += 1;
-                cur_seg = 0;
-            }
-            s
+    let (first_line, seg_offset) = vrow_to_line_seg(&app.editor, app.scroll_row, w);
+    let mut screen_y = y;
+    let max_y = y + h;
+    let mut line_idx = first_line;
+    let mut is_first = true;
+
+    while line_idx < app.editor.line_count() && screen_y < max_y {
+        let line_text = app.editor.line(line_idx);
+        let segs = wrap_line(line_text, w);
+
+        let start_seg = if is_first { seg_offset } else { 0 };
+        is_first = false;
+
+        let total_vis_rows = segs.len() - start_seg;
+        let rows_to_render = total_vis_rows.min((max_y - screen_y) as usize);
+
+        queue!(out, cursor::MoveTo(x, screen_y))?;
+
+        let char_start = segs[start_seg].0;
+        let char_end = if start_seg + rows_to_render < segs.len() {
+            segs[start_seg + rows_to_render].0
         } else {
-            String::new()
+            line_text.chars().count()
         };
 
-        let line = Line::from(vec![Span::raw(content)]);
-        let p = Paragraph::new(line).alignment(Alignment::Left);
-        frame.render_widget(p, row_area);
+        if char_end > char_start {
+            let text: String = line_text
+                .chars()
+                .skip(char_start)
+                .take(char_end - char_start)
+                .collect();
+            queue!(out, style::Print(text))?;
+        }
+
+        screen_y += rows_to_render as u16;
+        line_idx += 1;
     }
+
+    queue!(out, cursor::RestorePosition)?;
+    out.flush()?;
+    Ok(())
 }
 
 fn cursor_xy(inner: Rect, app: &App) -> Option<(u16, u16)> {

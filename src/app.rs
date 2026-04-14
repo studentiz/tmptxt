@@ -38,6 +38,8 @@ pub struct App {
     pub scroll_row: usize,
     /// Last rendered main editor height (for PageUp/PageDown).
     pub last_main_viewport_h: u16,
+    /// Editor area rectangle (x, y, width, height) from the last render frame.
+    pub editor_area: (u16, u16, u16, u16),
     /// Short, non-modal hint (e.g. clear/export feedback).
     pub toast: Option<String>,
     /// Last moment the buffer became dirty; used for debounced autosave.
@@ -55,6 +57,7 @@ impl App {
             save_state: SaveState::Saved,
             scroll_row: 0,
             last_main_viewport_h: 10,
+            editor_area: (0, 0, 80, 10),
             toast: None,
             dirty_since: None,
             should_quit: false,
