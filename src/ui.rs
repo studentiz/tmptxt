@@ -12,7 +12,7 @@ use ratatui::{
 };
 
 use crate::app::{App, Mode, SaveState};
-use crate::editor::{Editor, wrap_line, visual_line_count, cursor_segment_idx};
+use crate::editor::{Editor, cursor_segment_idx, display_width, wrap_line};
 
 pub fn render(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
@@ -191,7 +191,7 @@ pub fn raw_render_editor<W: Write>(out: &mut W, app: &App) -> std::io::Result<()
     queue!(out, cursor::SavePosition)?;
     clear_editor_area(out, app)?;
 
-    let (first_line, seg_offset) = vrow_to_line_seg(&app.editor, app.scroll_row, w);
+    let (first_line, seg_offset) = app.editor.vrow_to_line_seg(app.scroll_row, w);
     let mut screen_y = y;
     let max_y = y + h;
     let mut line_idx = first_line;
@@ -253,19 +253,6 @@ fn cursor_xy(inner: Rect, app: &App) -> Option<(u16, u16)> {
         .saturating_sub(Editor::visual_width_before(line_text, seg_start));
     let x = inner.x + cursor_vx.min(w.saturating_sub(1));
     Some((x, y))
-}
-
-/// Maps a visual-row offset to the corresponding (logical_line, segment_index).
-fn vrow_to_line_seg(editor: &Editor, vrow: usize, width: u16) -> (usize, usize) {
-    let mut remaining = vrow;
-    for i in 0..editor.line_count() {
-        let count = visual_line_count(editor.line(i), width);
-        if remaining < count {
-            return (i, remaining);
-        }
-        remaining -= count;
-    }
-    (editor.line_count(), 0)
 }
 
 fn shrink_path(path: &std::path::Path, max_chars: usize) -> String {
@@ -350,9 +337,7 @@ fn render_save_as_overlay(frame: &mut Frame, main: Rect, input: &str) {
 }
 
 fn unicode_display_width(s: &str) -> u16 {
-    s.chars()
-        .map(|c| unicode_width::UnicodeWidthChar::width(c).unwrap_or(0) as u16)
-        .sum()
+    display_width(s) as u16
 }
 
 fn render_clear_overlay(frame: &mut Frame, main: Rect) {

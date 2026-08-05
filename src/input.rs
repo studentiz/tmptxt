@@ -88,6 +88,12 @@ pub fn handle_key(app: &mut App, key: KeyEvent, storage: &Storage) -> Result<(),
     }
 }
 
+/// Width of the editor viewport (set by the last render frame). Used for
+/// wrap-aware vertical navigation.
+fn edit_width(app: &App) -> u16 {
+    app.editor_area.2.max(1)
+}
+
 fn handle_editing(app: &mut App, key: KeyEvent, storage: &Storage) -> Result<(), String> {
     if key.code == KeyCode::Esc {
         app.flush_draft(storage, true)?;
@@ -137,10 +143,10 @@ fn handle_editing(app: &mut App, key: KeyEvent, storage: &Storage) -> Result<(),
             app.editor.move_right();
         }
         KeyCode::Up => {
-            app.editor.move_up();
+            app.editor.move_up(edit_width(app));
         }
         KeyCode::Down => {
-            app.editor.move_down();
+            app.editor.move_down(edit_width(app));
         }
         KeyCode::Home => {
             app.editor.home();
@@ -150,11 +156,11 @@ fn handle_editing(app: &mut App, key: KeyEvent, storage: &Storage) -> Result<(),
         }
         KeyCode::PageUp => {
             let step = app.last_main_viewport_h.max(1) as usize;
-            app.editor.page_up(step);
+            app.editor.page_up(step, edit_width(app));
         }
         KeyCode::PageDown => {
             let step = app.last_main_viewport_h.max(1) as usize;
-            app.editor.page_down(step);
+            app.editor.page_down(step, edit_width(app));
         }
         _ => {}
     }
