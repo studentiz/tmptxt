@@ -182,11 +182,26 @@ pub fn clear_editor_area<W: Write>(out: &mut W, app: &App) -> std::io::Result<()
 /// cell-based rendering.  The terminal's own auto-wrap (DECAWM) marks continuation
 /// rows as soft line breaks, so mouse-selection / copy never inserts spurious newlines
 /// at wrap points.
-pub fn raw_render_editor<W: Write>(out: &mut W, app: &App) -> std::io::Result<()> {
+pub fn raw_render_editor<W: Write>(out: &mut W, app: &mut App) -> std::io::Result<()> {
     let (x, y, w, h) = app.editor_area;
     if w == 0 || h == 0 {
         return Ok(());
     }
+
+    // Idle frames repaint a byte-identical editor every 100 ms.  That continuous
+    // full-area clear+paint is what the terminal occasionally renders mid-frame —
+    // the editor is blank between the erase phase and the paint phase, so the
+    // whole screen visibly blinks.  When nothing on the viewport changed, emit
+    // nothing and leave the screen untouched.
+    let key = crate::app::RawFrameKey {
+        area: app.editor_area,
+        scroll_row: app.scroll_row,
+        content_rev: app.editor.rev,
+    };
+    if app.last_raw == Some(key) {
+        return Ok(());
+    }
+    app.last_raw = Some(key);
 
     queue!(out, cursor::SavePosition)?;
     clear_editor_area(out, app)?;
@@ -404,7 +419,7 @@ mod tests {
             bytes: Vec::new(),
             flushes: 0,
         };
-        raw_render_editor(&mut out, &app).unwrap();
+        raw_render_editor(&mut out, &mut app).unwrap();
         assert_eq!(
             out.flushes, 1,
             "clears and paint must share one flush to avoid a blank flicker"
@@ -412,5 +427,107 @@ mod tests {
         let painted = String::from_utf8_lossy(&out.bytes);
         assert!(painted.contains("line one"), "painted text missing from output");
         assert!(painted.contains("line two"), "painted text missing from output");
+    }
+
+    /// Regression test: an idle frame whose viewport is byte-identical to the
+    /// last one must emit *nothing*.  The old code re-cleared and re-painted the
+    /// whole editor 10×/s; terminals occasionally render the blank moment between
+    /// the erase phase and the paint phase, which is the visible screen flicker.
+    #[test]
+    fn raw_render_editor_skips_unchanged_idle_frames() {
+        let mut app = App::new(
+            PathBuf::from("/tmp/draft.txt"),
+            "line one\nline two\n".to_string(),
+        );
+        app.editor_area = (0, 4, 40, 8);
+
+        let mut out1 = CountingWriter {
+            bytes: Vec::new(),
+            flushes: 0,
+        };
+        raw_render_editor(&mut out1, &mut app).unwrap();
+        assert!(out1.flushes == 1 && !out1.bytes.is_empty(), "first frame paints");
+
+        // Same viewport, nothing changed: the renderer must not touch the terminal.
+        let mut out2 = CountingWriter {
+            bytes: Vec::new(),
+            flushes: 0,
+        };
+        raw_render_editor(&mut out2, &mut app).unwrap();
+        assert_eq!(out2.bytes, Vec::new(), "unchanged idle frame wrote bytes");
+        assert_eq!(out2.flushes, 0, "unchanged idle frame flushed");
+    }
+
+    /// A content edit (rev bump) must force a repaint, even if nothing else moved.
+    #[test]
+    fn raw_render_editor_repaints_after_edit() {
+        let mut app = App::new(
+            PathBuf::from("/tmp/draft.txt"),
+            "line one\nline two\n".to_string(),
+        );
+        app.editor_area = (0, 4, 40, 8);
+        raw_render_editor(&mut CountingWriter { bytes: Vec::new(), flushes: 0 }, &mut app).unwrap();
+
+        app.editor.insert_char('x'); // mutates content -> rev bumps
+
+        let mut out = CountingWriter {
+            bytes: Vec::new(),
+            flushes: 0,
+        };
+        raw_render_editor(&mut out, &mut app).unwrap();
+        let painted = String::from_utf8_lossy(&out.bytes);
+        assert!(painted.contains("xline one"), "edited line not repainted");
+    }
+
+    /// Scrolling (scroll_row change) must force a repaint.
+    #[test]
+    fn raw_render_editor_repaints_after_scroll() {
+        let mut app = App::new(
+            PathBuf::from("/tmp/draft.txt"),
+            "line one\nline two\nline three\nline four\n".to_string(),
+        );
+        app.editor_area = (0, 4, 40, 3);
+        raw_render_editor(&mut CountingWriter { bytes: Vec::new(), flushes: 0 }, &mut app).unwrap();
+
+        // Cursor to the last line (visual row 3) with a 3-row viewport: the
+        // real loop runs ensure_cursor_visible during render, which scrolls.
+        app.editor.move_down(40);
+        app.editor.move_down(40);
+        app.editor.move_down(40);
+        app.ensure_cursor_visible(3, 40);
+        assert!(app.scroll_row > 0, "expected the viewport to scroll");
+
+        let mut out = CountingWriter {
+            bytes: Vec::new(),
+            flushes: 0,
+        };
+        raw_render_editor(&mut out, &mut app).unwrap();
+        let painted = String::from_utf8_lossy(&out.bytes);
+        assert!(painted.contains("line four"), "scrolled viewport not repainted");
+    }
+
+    /// An overlay erases physical editor cells; the cache must be invalidated so
+    /// editing resumes with a full repaint (not a stale "unchanged" skip).
+    #[test]
+    fn raw_render_editor_repaints_after_overlay_clear() {
+        let mut app = App::new(
+            PathBuf::from("/tmp/draft.txt"),
+            "line one\nline two\n".to_string(),
+        );
+        app.editor_area = (0, 4, 40, 8);
+        raw_render_editor(&mut CountingWriter { bytes: Vec::new(), flushes: 0 }, &mut app).unwrap();
+
+        // Overlay flow: raw_clear_pending is consumed in main.rs, which also
+        // clears app.last_raw. Simulate both sides of that handshake.
+        app.raw_clear_pending = true;
+        app.last_raw = None;
+
+        let mut out = CountingWriter {
+            bytes: Vec::new(),
+            flushes: 0,
+        };
+        raw_render_editor(&mut out, &mut app).unwrap();
+        let painted = String::from_utf8_lossy(&out.bytes);
+        assert!(painted.contains("line one"), "editor not repainted after overlay");
     }
 }

@@ -123,6 +123,9 @@ fn run_app(
         // the erase and the dialog land on screen in a single pass.
         if app.raw_clear_pending {
             app.raw_clear_pending = false;
+            // The overlay erases physical editor cells; forget the last raw paint so
+            // editing resumes with a full repaint instead of a stale "unchanged" skip.
+            app.last_raw = None;
             ui::clear_rect(terminal.backend_mut(), ui::overlay_rect(&app))
                 .map_err(|e| format!("clear overlay area failed: {e}"))?;
         }
@@ -132,7 +135,7 @@ fn run_app(
             .map_err(|e| format!("draw failed: {e}"))?;
 
         if app.mode.is_editing() {
-            ui::raw_render_editor(terminal.backend_mut(), &app)
+            ui::raw_render_editor(terminal.backend_mut(), &mut app)
                 .map_err(|e| format!("raw render failed: {e}"))?;
         }
 

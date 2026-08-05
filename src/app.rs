@@ -29,6 +29,18 @@ pub enum SaveState {
     SaveFailed(String),
 }
 
+/// Fingerprint of the last frame the raw editor painted to the physical
+/// terminal. The raw renderer skips repainting when the viewport is unchanged,
+/// so an idle app stops re-clearing and re-painting the whole editor 10×/s —
+/// that continuous clear+paint is what the terminal occasionally renders
+/// mid-frame as a visible blank flash.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RawFrameKey {
+    pub area: (u16, u16, u16, u16),
+    pub scroll_row: usize,
+    pub content_rev: u64,
+}
+
 pub struct App {
     pub editor: Editor,
     pub mode: Mode,
@@ -46,6 +58,10 @@ pub struct App {
     /// erasing before the next draw.  Set when an overlay mode opens; the editor
     /// is painted outside ratatui's buffer, so ratatui cannot clear it itself.
     pub raw_clear_pending: bool,
+    /// Key of the last frame `raw_render_editor` painted, or `None` when the
+    /// physical editor area may hold stale glyphs (first frame, or right after
+    /// an overlay erased it) and must be repainted in full.
+    pub last_raw: Option<RawFrameKey>,
     /// Last moment the buffer became dirty; used for debounced autosave.
     dirty_since: Option<Instant>,
     pub should_quit: bool,
@@ -64,6 +80,7 @@ impl App {
             editor_area: (0, 0, 80, 10),
             toast: None,
             raw_clear_pending: false,
+            last_raw: None,
             dirty_since: None,
             should_quit: false,
         }

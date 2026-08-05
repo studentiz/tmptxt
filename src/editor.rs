@@ -21,6 +21,10 @@ pub struct Editor {
     /// moves. `None` means "not established since the last horizontal edit" —
     /// the next vertical move derives it from the cursor's current position.
     preferred_vcol: Option<usize>,
+    /// Monotonic revision, bumped on every text mutation. The raw editor
+    /// renderer uses it (with scroll offset + viewport) to skip repainting
+    /// when nothing on screen changed.
+    pub rev: u64,
 }
 
 impl Editor {
@@ -41,6 +45,7 @@ impl Editor {
             cursor_line: 0,
             cursor_col: 0,
             preferred_vcol: None,
+            rev: 0,
         }
     }
 
@@ -62,6 +67,7 @@ impl Editor {
         line.insert(byte, c);
         self.cursor_col += 1;
         self.preferred_vcol = None;
+        self.rev += 1;
     }
 
     /// Inserts pasted or typed text; respects embedded newlines.
@@ -96,6 +102,7 @@ impl Editor {
         self.cursor_line += 1;
         self.cursor_col = 0;
         self.preferred_vcol = None;
+        self.rev += 1;
     }
 
     pub fn backspace(&mut self) {
@@ -108,6 +115,7 @@ impl Editor {
             line.drain(start..end);
             self.cursor_col = col;
             self.preferred_vcol = None;
+            self.rev += 1;
             return;
         }
 
@@ -121,6 +129,7 @@ impl Editor {
         self.lines[self.cursor_line].push_str(&cur);
         self.cursor_col = prev_len;
         self.preferred_vcol = None;
+        self.rev += 1;
     }
 
     pub fn delete_forward(&mut self) {
@@ -132,6 +141,7 @@ impl Editor {
             let end = start + ch.len_utf8();
             line.drain(start..end);
             self.preferred_vcol = None;
+            self.rev += 1;
             return;
         }
 
@@ -139,6 +149,7 @@ impl Editor {
             let next = self.lines.remove(self.cursor_line + 1);
             self.lines[self.cursor_line].push_str(&next);
             self.preferred_vcol = None;
+            self.rev += 1;
         }
     }
 
@@ -218,6 +229,7 @@ impl Editor {
         self.cursor_line = 0;
         self.cursor_col = 0;
         self.preferred_vcol = None;
+        self.rev += 1;
     }
 
     /// Moves the cursor to a specific visual row, keeping the preferred column.
