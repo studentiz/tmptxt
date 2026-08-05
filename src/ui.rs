@@ -148,7 +148,10 @@ fn render_footer(frame: &mut Frame, area: Rect, _app: &App) {
     frame.render_widget(p, area);
 }
 
-/// Clears a rectangle of cells on the physical terminal.
+/// Queues erasing a rectangle of cells on the physical terminal.  Does not flush:
+/// callers flush so the clears and the writes that follow land in one pass — an
+/// intermediate flush would briefly blank the region between the two (visible as
+/// a flicker once content fills the screen).
 ///
 /// Editor text is drawn outside ratatui's cell buffer (`raw_render_editor`), so
 /// ratatui's diff-based rendering never sees it and cannot clear it.  Blanking the
@@ -162,7 +165,6 @@ pub fn clear_rect<W: Write>(out: &mut W, rect: Rect) -> std::io::Result<()> {
             cterm::Clear(cterm::ClearType::UntilNewLine)
         )?;
     }
-    out.flush()?;
     Ok(())
 }
 
@@ -378,4 +380,52 @@ fn render_clear_overlay(frame: &mut Frame, main: Rect) {
         .title(" Confirm ");
     let p = Paragraph::new(text).block(block).alignment(Alignment::Center);
     frame.render_widget(p, area);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    /// A writer that records bytes and counts explicit flushes.
+    struct CountingWriter {
+        bytes: Vec<u8>,
+        flushes: usize,
+    }
+
+    impl std::io::Write for CountingWriter {
+        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+            self.bytes.extend_from_slice(buf);
+            Ok(buf.len())
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            self.flushes += 1;
+            Ok(())
+        }
+    }
+
+    /// Regression test: `raw_render_editor` must clear and repaint in a single
+    /// flush.  An intermediate flush (e.g. inside the clear helper) briefly blanks
+    /// the whole editor area before the text is painted — a visible flicker once
+    /// content fills the screen.
+    #[test]
+    fn raw_render_editor_paints_in_one_flush() {
+        let mut app = App::new(
+            PathBuf::from("/tmp/draft.txt"),
+            "line one\nline two\n".to_string(),
+        );
+        app.editor_area = (0, 4, 40, 8);
+        let mut out = CountingWriter {
+            bytes: Vec::new(),
+            flushes: 0,
+        };
+        raw_render_editor(&mut out, &app).unwrap();
+        assert_eq!(
+            out.flushes, 1,
+            "clears and paint must share one flush to avoid a blank flicker"
+        );
+        let painted = String::from_utf8_lossy(&out.bytes);
+        assert!(painted.contains("line one"), "painted text missing from output");
+        assert!(painted.contains("line two"), "painted text missing from output");
+    }
 }

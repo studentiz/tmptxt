@@ -118,7 +118,8 @@ fn run_app(
         // When an overlay opens, blank only the physical cells that overlay covers — the
         // text behind the dialog is obscured, but the rest of the editor stays visible.
         // The one-shot flag (not "every non-editing frame") avoids erasing the freshly
-        // drawn overlay each cycle.
+        // drawn overlay each cycle.  clear_rect only queues; the draw below flushes, so
+        // the erase and the dialog land on screen in a single pass.
         if app.raw_clear_pending {
             app.raw_clear_pending = false;
             ui::clear_rect(terminal.backend_mut(), ui::overlay_rect(&app))
