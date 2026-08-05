@@ -114,6 +114,17 @@ fn run_app(
             break;
         }
 
+        // Editor text is painted outside ratatui's buffer, so ratatui cannot clear it.
+        // When an overlay opens, blank only the physical cells that overlay covers — the
+        // text behind the dialog is obscured, but the rest of the editor stays visible.
+        // The one-shot flag (not "every non-editing frame") avoids erasing the freshly
+        // drawn overlay each cycle.
+        if app.raw_clear_pending {
+            app.raw_clear_pending = false;
+            ui::clear_rect(terminal.backend_mut(), ui::overlay_rect(&app))
+                .map_err(|e| format!("clear overlay area failed: {e}"))?;
+        }
+
         terminal
             .draw(|f| ui::render(f, &mut app))
             .map_err(|e| format!("draw failed: {e}"))?;

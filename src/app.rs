@@ -42,6 +42,10 @@ pub struct App {
     pub editor_area: (u16, u16, u16, u16),
     /// Short, non-modal hint (e.g. clear/export feedback).
     pub toast: Option<String>,
+    /// True while the raw-drawn editor area still holds stale glyphs that need
+    /// erasing before the next draw.  Set when an overlay mode opens; the editor
+    /// is painted outside ratatui's buffer, so ratatui cannot clear it itself.
+    pub raw_clear_pending: bool,
     /// Last moment the buffer became dirty; used for debounced autosave.
     dirty_since: Option<Instant>,
     pub should_quit: bool,
@@ -59,6 +63,7 @@ impl App {
             last_main_viewport_h: 10,
             editor_area: (0, 0, 80, 10),
             toast: None,
+            raw_clear_pending: false,
             dirty_since: None,
             should_quit: false,
         }

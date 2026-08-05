@@ -148,6 +148,34 @@ fn render_footer(frame: &mut Frame, area: Rect, _app: &App) {
     frame.render_widget(p, area);
 }
 
+/// Clears a rectangle of cells on the physical terminal.
+///
+/// Editor text is drawn outside ratatui's cell buffer (`raw_render_editor`), so
+/// ratatui's diff-based rendering never sees it and cannot clear it.  Blanking the
+/// physical cells an overlay covers makes that overlay's background opaque, hiding
+/// only the text behind it while the rest of the editor stays visible.
+pub fn clear_rect<W: Write>(out: &mut W, rect: Rect) -> std::io::Result<()> {
+    for row in 0..rect.height {
+        queue!(
+            out,
+            cursor::MoveTo(rect.x, rect.y + row),
+            cterm::Clear(cterm::ClearType::UntilNewLine)
+        )?;
+    }
+    out.flush()?;
+    Ok(())
+}
+
+/// Erases every row of the editor area on the physical terminal (used by the raw
+/// editor renderer before repainting each frame).
+pub fn clear_editor_area<W: Write>(out: &mut W, app: &App) -> std::io::Result<()> {
+    let (x, y, w, h) = app.editor_area;
+    if w == 0 || h == 0 {
+        return Ok(());
+    }
+    clear_rect(out, Rect::new(x, y, w, h))
+}
+
 /// Writes editor text directly to the terminal via crossterm, bypassing ratatui's
 /// cell-based rendering.  The terminal's own auto-wrap (DECAWM) marks continuation
 /// rows as soft line breaks, so mouse-selection / copy never inserts spurious newlines
@@ -159,14 +187,7 @@ pub fn raw_render_editor<W: Write>(out: &mut W, app: &App) -> std::io::Result<()
     }
 
     queue!(out, cursor::SavePosition)?;
-
-    for row in 0..h {
-        queue!(
-            out,
-            cursor::MoveTo(x, y + row),
-            cterm::Clear(cterm::ClearType::UntilNewLine)
-        )?;
-    }
+    clear_editor_area(out, app)?;
 
     let (first_line, seg_offset) = vrow_to_line_seg(&app.editor, app.scroll_row, w);
     let mut screen_y = y;
@@ -258,9 +279,35 @@ fn shrink_path(path: &std::path::Path, max_chars: usize) -> String {
     format!("...{}", s.chars().skip(skip).collect::<String>())
 }
 
+/// Centered confirm-dialog rectangle within the editor area.
+fn clear_overlay_rect(main: Rect) -> Rect {
+    let w = (main.width * 4 / 5).max(40).min(main.width);
+    let h = 7u16.min(main.height).max(5);
+    let x = main.x + (main.width.saturating_sub(w)) / 2;
+    let y = main.y + (main.height.saturating_sub(h)) / 2;
+    Rect::new(x, y, w, h)
+}
+
+/// Bottom save-as bar rectangle within the editor area.
+fn save_as_overlay_rect(main: Rect) -> Rect {
+    let h = 5u16.min(main.height.max(1));
+    Rect::new(main.x, main.y + main.height.saturating_sub(h), main.width, h)
+}
+
+/// The rectangle the current overlay occupies, or an empty rect while editing.
+/// Used to blank exactly the physical cells an overlay covers before drawing it.
+pub fn overlay_rect(app: &App) -> Rect {
+    let (x, y, w, h) = app.editor_area;
+    let main = Rect::new(x, y, w, h);
+    match &app.mode {
+        Mode::ClearConfirm => clear_overlay_rect(main),
+        Mode::SaveAs { .. } => save_as_overlay_rect(main),
+        Mode::Editing => Rect::default(),
+    }
+}
+
 fn render_save_as_overlay(frame: &mut Frame, main: Rect, input: &str) {
-    let h = 5u16.min(main.height.max(5));
-    let area = Rect::new(main.x, main.y + main.height.saturating_sub(h), main.width, h);
+    let area = save_as_overlay_rect(main);
     frame.render_widget(Clear, area);
 
     let block = Block::default()
@@ -307,12 +354,7 @@ fn unicode_display_width(s: &str) -> u16 {
 }
 
 fn render_clear_overlay(frame: &mut Frame, main: Rect) {
-    let w = (main.width * 4 / 5).max(40).min(main.width);
-    let h = 7u16.min(main.height).max(5);
-    let x = main.x + (main.width.saturating_sub(w)) / 2;
-    let y = main.y + (main.height.saturating_sub(h)) / 2;
-    let area = Rect::new(x, y, w, h);
-
+    let area = clear_overlay_rect(main);
     frame.render_widget(Clear, area);
 
     let text = vec![

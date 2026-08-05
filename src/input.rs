@@ -98,12 +98,14 @@ fn handle_editing(app: &mut App, key: KeyEvent, storage: &Storage) -> Result<(),
     if key.modifiers.contains(KeyModifiers::CONTROL) {
         match key.code {
             KeyCode::Char('s') | KeyCode::Char('S') => {
+                app.raw_clear_pending = true;
                 app.mode = Mode::SaveAs {
                     input: String::new(),
                 };
                 return Ok(());
             }
             KeyCode::Char('l') | KeyCode::Char('L') => {
+                app.raw_clear_pending = true;
                 app.mode = Mode::ClearConfirm;
                 return Ok(());
             }
