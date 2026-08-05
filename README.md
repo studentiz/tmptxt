@@ -61,6 +61,22 @@ tmptxt is written in [Rust](https://www.rust-lang.org/). Your computer compiles 
 
 > 💬 **Never heard of Cargo?** No worries. Cargo is just the build tool that ships with the Rust programming language. You don't download it separately — the Rust installer handles everything. The steps below walk you through it.
 
+<br>
+
+### ⚡ Fastest way — macOS & Linux (Homebrew)
+
+Have [Homebrew](https://brew.sh/)? Skip everything below — tmptxt installs with **one command**:
+
+```bash
+brew install studentiz/tap/tmptxt
+```
+
+> 💬 No Rust, no git, no manual compiling — Homebrew fetches the source, builds it, and puts `tmptxt` on your PATH. Works on macOS (Apple Silicon & Intel) and on Linux via [Homebrew-on-Linux](https://docs.brew.sh/Homebrew-on-Linux).
+>
+> No Homebrew? The manual steps below work everywhere.
+
+<br>
+
 Pick **your operating system** and follow the steps in order. Every command is meant to be **copied and pasted as-is**.
 
 <br>
@@ -359,7 +375,13 @@ Your draft lives in the **OS user data directory** — never next to the install
 
 ## 🗑️ Uninstall
 
-Remove the program (all platforms):
+The easiest way to remove it (if you installed via Homebrew):
+
+```bash
+brew uninstall tmptxt
+```
+
+Installed it from source with Cargo? Remove the program instead:
 
 ```bash
 cargo uninstall tmptxt
@@ -413,6 +435,19 @@ Or push to an existing remote:
 git remote add origin https://github.com/studentiz/tmptxt.git
 git push -u origin main
 ```
+
+<br>
+
+**Release a new version** (tags the repo and updates the Homebrew formula too):
+
+```bash
+scripts/release-homebrew.sh vX.Y.Z
+```
+
+> 💬 Bump the version in `Cargo.toml` first and commit it, then run the script.
+> It creates the git tag, recomputes the source-tarball sha256, and pushes the
+> updated formula to [studentiz/homebrew-tap](https://github.com/studentiz/homebrew-tap)
+> so `brew install studentiz/tap/tmptxt` gets the new version.
 
 </details>
 
