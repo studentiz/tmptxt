@@ -1,7 +1,9 @@
 # Rust / Cargo
 /target/
 **/*.rs.bk
-Cargo.lock
+
+# Cargo.lock is committed: the Homebrew tap installs with `cargo install
+# --locked`, which requires a lock file in the source tarball.
 
 # IDE / OS
 .DS_Store
