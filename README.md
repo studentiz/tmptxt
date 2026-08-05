@@ -10,6 +10,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
+[![Homebrew](https://img.shields.io/badge/Homebrew-studentiz%2Ftap%2Ftmptxt-orange?logo=homebrew&logoColor=white)](https://github.com/studentiz/homebrew-tap)
 [![GitHub](https://img.shields.io/badge/GitHub-studentiz%2Ftmptxt-181717?logo=github)](https://github.com/studentiz/tmptxt)
 
 <br>
@@ -18,6 +19,23 @@
 *Next time you type `tmptxt` — it's still there.*
 
 </div>
+
+<br>
+
+## ⚡ Quick install — one command
+
+**macOS & Linux, have [Homebrew](https://brew.sh/)? This is the entire install:**
+
+```bash
+brew install studentiz/tap/tmptxt
+```
+
+> [!IMPORTANT]
+> No Rust, no Git, no compiling — Homebrew fetches the source, builds it, and puts
+> `tmptxt` on your PATH automatically. Works on **macOS (Apple Silicon & Intel)** and
+> on **Linux** via [Homebrew-on-Linux](https://docs.brew.sh/Homebrew-on-Linux).
+>
+> On **Windows**, or prefer not to use Homebrew? The manual install below works everywhere.
 
 <br>
 
@@ -48,9 +66,14 @@ The common thread: **throwaway text you'd lose otherwise**, accessible from any 
 
 <br>
 
-## 🚀 Installation
+## 🚀 Manual install
 
-After these steps, you can type `tmptxt` in **any** terminal window — the same way you'd type `nano` or `git`.
+> [!TIP]
+> **macOS & Linux with [Homebrew](https://brew.sh/)?** Skip this entire section — the
+> one-liner at the top of the page (`brew install studentiz/tap/tmptxt`) is all you need.
+> It also works on [Homebrew-on-Linux](https://docs.brew.sh/Homebrew-on-Linux).
+
+Otherwise, install from source. After that you can type `tmptxt` in **any** terminal window — the same way you'd type `nano` or `git`.
 
 tmptxt is written in [Rust](https://www.rust-lang.org/). Your computer compiles it once during install. That requires two tools:
 
@@ -60,20 +83,6 @@ tmptxt is written in [Rust](https://www.rust-lang.org/). Your computer compiles 
 | 📦 **Cargo** | Compiles and installs tmptxt | Comes **free with Rust** — install Rust, get Cargo automatically |
 
 > 💬 **Never heard of Cargo?** No worries. Cargo is just the build tool that ships with the Rust programming language. You don't download it separately — the Rust installer handles everything. The steps below walk you through it.
-
-<br>
-
-### ⚡ Fastest way — macOS & Linux (Homebrew)
-
-Have [Homebrew](https://brew.sh/)? Skip everything below — tmptxt installs with **one command**:
-
-```bash
-brew install studentiz/tap/tmptxt
-```
-
-> 💬 No Rust, no git, no manual compiling — Homebrew fetches the source, builds it, and puts `tmptxt` on your PATH. Works on macOS (Apple Silicon & Intel) and on Linux via [Homebrew-on-Linux](https://docs.brew.sh/Homebrew-on-Linux).
->
-> No Homebrew? The manual steps below work everywhere.
 
 <br>
 
