@@ -349,8 +349,8 @@ Your draft lives in the **OS user data directory** — never next to the install
 
 | OS | File path |
 | :--- | :--- |
-| 🐧 Linux | `~/.local/share/tmptxt/tmptxt/default.txt` |
-| 🍎 macOS | `~/Library/Application Support/tmptxt/tmptxt/default.txt` |
+| 🐧 Linux | `~/.local/share/tmptxt/default.txt` |
+| 🍎 macOS | `~/Library/Application Support/org.tmptxt.tmptxt/default.txt` |
 | 🪟 Windows | `%LOCALAPPDATA%\tmptxt\tmptxt\default.txt` |
 
 **Save As** (`Ctrl+S`) exports a copy to any path you choose; the app continues to use `default.txt`.
@@ -376,7 +376,7 @@ Optionally, delete your saved draft data:
 | OS | Command |
 | :--- | :--- |
 | 🐧 Linux | `rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/tmptxt"` |
-| 🍎 macOS | `rm -rf "$HOME/Library/Application Support/tmptxt"` |
+| 🍎 macOS | `rm -rf "$HOME/Library/Application Support/org.tmptxt.tmptxt"` |
 | 🪟 Windows | `Remove-Item -Recurse -Force "$env:LOCALAPPDATA\tmptxt"` |
 
 <br>
