@@ -4,6 +4,8 @@
 
 **A tiny terminal scratchpad — auto-saves, one draft, zero fuss.**
 
+*Recursive acronym: "tmptxt" Makes Plain Text eXtremely Temporary*
+
 <br>
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)

@@ -21,7 +21,8 @@ use storage::Storage;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn print_help() {
-    println!("tmptxt — terminal scratchpad with auto-save");
+    println!("tmptxt — Makes Plain Text eXtremely Temporary");
+    println!("A minimal auto-saving terminal scratchpad.");
     println!();
     println!("Usage:");
     println!("  tmptxt           Open the scratchpad (default draft)");
