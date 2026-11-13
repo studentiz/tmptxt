@@ -96,7 +96,12 @@ fn edit_width(app: &App) -> u16 {
 
 fn handle_editing(app: &mut App, key: KeyEvent, storage: &Storage) -> Result<(), String> {
     if key.code == KeyCode::Esc {
-        app.flush_draft(storage, true)?;
+        // A failed exit-save must not lose the in-RAM draft: stay in the
+        // editor (red SaveFailed status) so the user can fix the issue and
+        // press Esc again.  Force-quit is always possible via the terminal.
+        if app.flush_draft(storage, true).is_err() {
+            return Ok(());
+        }
         app.should_quit = true;
         return Ok(());
     }
@@ -166,4 +171,36 @@ fn handle_editing(app: &mut App, key: KeyEvent, storage: &Storage) -> Result<(),
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crossterm::event::KeyEventKind;
+
+    fn press(code: KeyCode) -> KeyEvent {
+        KeyEvent {
+            code,
+            modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::NONE,
+        }
+    }
+
+    /// An exit-save failure must not quit: the in-RAM draft must stay alive
+    /// (red SaveFailed status) so the user can fix the issue and retry.
+    #[test]
+    fn esc_with_failing_save_stays_in_the_editor() {
+        let mut app = App::new(PathBuf::from("/tmp/draft.txt"), "hello".to_string());
+        app.mark_dirty();
+        // Path whose parent is not a directory: every write attempt fails
+        // deterministically (ENOTDIR), for any user.
+        let storage = Storage {
+            draft_path: PathBuf::from("/dev/stdin/x.txt"),
+        };
+        handle_key(&mut app, press(KeyCode::Esc), &storage).unwrap();
+        assert!(!app.should_quit, "must not quit when the exit-save fails");
+        assert!(matches!(app.save_state, SaveState::SaveFailed(_)));
+        assert!(app.mode.is_editing());
+    }
 }
