@@ -232,10 +232,16 @@ pub fn raw_render_editor<W: Write>(out: &mut W, app: &mut App) -> std::io::Resul
         };
 
         if char_end > char_start {
+            // Control bytes in the buffer (ESC sequences pasted from ANSI
+            // logs, CR from CRLF pastes) must not reach the terminal raw:
+            // the terminal would interpret them (screen damage / escape
+            // injection).  Replace with spaces for display only — the stored
+            // buffer is untouched.
             let text: String = line_text
                 .chars()
                 .skip(char_start)
                 .take(char_end - char_start)
+                .map(|c| if c.is_control() { ' ' } else { c })
                 .collect();
             queue!(out, style::Print(text))?;
         }
@@ -529,5 +535,21 @@ mod tests {
         raw_render_editor(&mut out, &mut app).unwrap();
         let painted = String::from_utf8_lossy(&out.bytes);
         assert!(painted.contains("line one"), "editor not repainted after overlay");
+    }
+
+    /// Control bytes in the buffer (ESC sequences, CR) must never be emitted
+    /// raw to the terminal — they would be interpreted by it.
+    #[test]
+    fn raw_render_editor_sanitizes_control_bytes_from_content() {
+        let mut app = App::new(
+            PathBuf::from("/tmp/draft.txt"),
+            "a\x1b[2Jb\rc".to_string(),
+        );
+        app.editor_area = (0, 4, 40, 8);
+        let mut out = CountingWriter { bytes: Vec::new(), flushes: 0 };
+        raw_render_editor(&mut out, &mut app).unwrap();
+        let painted = String::from_utf8_lossy(&out.bytes).to_string();
+        assert!(painted.contains("a [2Jb c"), "control chars must render as spaces");
+        assert!(!painted.contains("\u{1b}[2J"), "ESC sequence must not leak raw");
     }
 }
