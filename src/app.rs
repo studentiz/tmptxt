@@ -113,7 +113,13 @@ impl App {
         if since.elapsed() < AUTOSAVE_INTERVAL {
             return Ok(());
         }
-        self.flush_draft(storage, false)
+        // A failed autosave must NOT kill the session: the draft still lives
+        // in RAM.  flush_draft already records SaveState::SaveFailed (red
+        // status bar); re-arm the debounce and keep editing, retrying later.
+        if self.flush_draft(storage, false).is_err() {
+            self.dirty_since = Some(Instant::now());
+        }
+        Ok(())
     }
 
     /// Writes the default draft if dirty, or when `force` is true.

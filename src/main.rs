@@ -111,7 +111,12 @@ fn run_app(
 
     loop {
         if signals::take_interrupt() {
-            app.flush_draft(&storage, true)?;
+            // Same policy as Esc: a failed exit-save keeps the draft alive in
+            // RAM (red SaveFailed status); the user can fix the issue and
+            // press Ctrl+C again, or force-quit via the terminal.
+            if app.flush_draft(&storage, true).is_err() {
+                continue;
+            }
             break;
         }
 
