@@ -85,7 +85,11 @@ impl Storage {
             fs::create_dir_all(p).map_err(|e| format!("create {}: {e}", p.display()))?;
         }
 
-        let tmp = path.with_extension("tmp");
+        // A fixed ".tmp" suffix collides with a target file that already
+        // ends in ".tmp" (the temp file would BE the target: the existing
+        // file gets truncated, then removed, and the rename fails).  The
+        // PID suffix keeps the temp name distinct from the target.
+        let tmp = path.with_extension(format!("tmp.{}", std::process::id()));
         {
             let mut opts = fs::OpenOptions::new();
             opts.write(true).create(true).truncate(true);
